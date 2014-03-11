@@ -1,0 +1,6 @@
+- settings: 
+    region: europe
+  data_url: http://eu.service.cobbles.com
+  links:
+    home: http://eu.cobbles.com
+    mail: http://eu.mail.cobbles.com
