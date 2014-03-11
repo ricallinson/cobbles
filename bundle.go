@@ -8,12 +8,19 @@ import (
 type Bundle struct {
 	dimensions []interface{}
 	settings   []interface{}
+    lookup     map[string]int
+}
+
+type Context struct {
+    Settings map[string]string
 }
 
 // Loads the filepath and creates a new Bundle for the given configuration interface.
 func New(dirpath string) *Bundle {
 
-	this := &Bundle{}
+	this := &Bundle{
+        lookup: map[string]int{},
+    }
 
 	files, err := ioutil.ReadDir(dirpath)
 	if err != nil {
@@ -52,9 +59,30 @@ func (this *Bundle) loadSettingsFile(filepath string) {
 	if err != nil {
 		panic(err)
 	}
+
 	settings := []interface{}{}
 	fromYaml(b, &settings)
-	this.settings = append(this.settings, settings...)
+
+    // For each settings group found in the file.
+    for i := range settings {
+        setting := settings[i]
+        context := &Context{}
+        Cast(settings, context)
+        key := this.makeLookupPath()
+        if _, ok := this.lookup[key]; ok {
+            // panic("Settings group " + key + " has already loaded.")
+        }
+        this.settings = append(this.settings, setting)
+        this.lookup[key] = len(this.settings)
+    }
+}
+
+func (this *Bundle) flattenDimensions() {
+
+}
+
+func (this *Bundle) makeLookupPath() string {
+    return ""
 }
 
 // Reads the configuration for the given context into the given configuration interface.

@@ -1,7 +1,7 @@
 package cobbles
 
 import (
-	"fmt"
+	// "fmt"
 	. "github.com/ricallinson/simplebdd"
 	"testing"
 )
@@ -18,8 +18,8 @@ func TestRouter(t *testing.T) {
 
 	Describe("", func() {
 		It("", func() {
-			b := New("./fixtures")
-			fmt.Printf("%v", string(b.Debug()))
+			New("./fixtures")
+			// fmt.Printf("%v", string(b.Debug()))
 			AssertEqual(true, false)
 		})
 	})
