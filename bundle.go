@@ -4,15 +4,23 @@ import (
 	"io/ioutil"
 	"path"
 	// "fmt"
-	"sort"
+	// "sort"
 	"strings"
     // "reflect"
+)
+
+const(
+    CONTEXT_SETTER = "="
+    CONTEXT_SEPARATOR = ","
+    DEFAULT = "*"
+    SEPARATOR = "/"
 )
 
 type Bundle struct {
 	dimensions     []map[string]interface{}
 	settings       map[string][]byte
-	dimensionPaths map[string]string
+    dimensionIndex map[string]int
+    dimensionPaths map[string]map[string]string
 }
 
 type Context struct {
@@ -55,8 +63,9 @@ func (this *Bundle) loadDimensionsFile(filepath string) {
 	if err != nil {
 		panic(err)
 	}
-	this.dimensions = make([]map[string]interface{}, 4)
+	this.dimensions = []map[string]interface{}{}
 	fromYaml(b, &this.dimensions)
+    this.dimensionIndex, this.dimensionPaths = this.flattenDimensions(this.dimensions)
 }
 
 // Loads a settings YAML file into the Bundle.
@@ -73,38 +82,38 @@ func (this *Bundle) loadSettingsFile(filepath string) {
 	this.settings[key] = settings
 }
 
-// Returns a slice of ordered lookup strings.
-func (this *Bundle) getLookupPaths(context string) []string {
-    return []string{}
-}
-
-// Replaces any substitutions found in the final configuration.
-func (this *Bundle) applySubstitutions(config interface{}) {
-    // ...
-}
-
 // Takes the unmarshalled YAML "dimensions" slice and returns it as a flattened map.
-func (this *Bundle) flattenDimensions(dimensions []map[string]interface{}) map[string]string {
+func (this *Bundle) flattenDimensions(dimensions []map[string]interface{}) (map[string]int, map[string]map[string]string) {
 
-	build := make(map[string]string)
+    index := map[string]int{}
+	build := make(map[string]map[string]string)
 
-	for _, set := range dimensions {
-		for key, dimension := range set {
-			this.flattenDimension(key, dimension.(map[interface{}]interface{}), build)
+	for i, set := range dimensions {
+		for name, dimension := range set {
+            index[name] = i
+			build[name] = this.flattenDimension("", dimension.(map[interface{}]interface{}))
 		}
 	}
 
-	return build
+	return index, build
 }
 
 // Takes an unmarshalled YAML "dimensions" map and adds it as a flattened string to the given "build" map.
-func (this *Bundle) flattenDimension(prefix string, dimension map[interface{}]interface{}, build map[string]string) {
+func (this *Bundle) flattenDimension(prefix string, dimension map[interface{}]interface{}, b... map[string]string) map[string]string {
+
+    var build map[string]string
+
+    if len(b) == 0 {
+        build = make(map[string]string)
+    } else {
+        build = b[0]
+    }
 
     for k, nextDimension := range dimension {
         key := k.(string)
         newPrefix := key
         if prefix != "" {
-            newPrefix = prefix + "/" + key
+            newPrefix = prefix + SEPARATOR + key
         }
         build[newPrefix] = key
         // If nextDimension is a value and is a map.
@@ -112,16 +121,52 @@ func (this *Bundle) flattenDimension(prefix string, dimension map[interface{}]in
             this.flattenDimension(newPrefix, nextDimension.(map[interface{}]interface{}), build);
         }
     }
+
+    return build
 }
 
 // Takes the given context string and returns it as an ordered lookup path.
 func (this *Bundle) makeLookupPath(context string) string {
-	if context == "master" {
-		return "master"
-	}
-	parts := strings.Split(context, ",")
-	sort.Strings(parts)
-	return strings.Join(parts, ",")
+	return context
+}
+
+// Returns a slice of ordered lookup strings for the given context.
+func (this *Bundle) getLookupPaths(context string) []string {
+    this.makeOrderedLookupList(context)
+    return []string{}
+}
+
+// Returns a slice of ordered lookup strings for the bundles dimensions.
+func (this *Bundle) makeOrderedLookupList(context string) map[string][]string {
+
+    list := map[string][]string{}
+
+    for _, set := range this.dimensions {
+        for dimensionName, _ := range set {
+            // For each dimension value see if have a match.
+            for lookupPath, value := range this.dimensionPaths[dimensionName] {
+                match := dimensionName + CONTEXT_SETTER + value
+                // If there is a match add it to the list.
+                if strings.Index(context, match) > -1 {
+                    // Reverse the path.
+                    slice := strings.Split(DEFAULT + SEPARATOR + lookupPath, SEPARATOR)
+                    // sort.Sort(sort.Reverse(sort.StringSlice(slice)))
+                    list[dimensionName] = reverseStringSlice(slice)
+                }
+            }
+            // If no match was found use the default.
+            if _, ok := list[dimensionName]; ok == false {
+                list[dimensionName] = []string{DEFAULT}
+            }
+        } 
+    }
+
+    return list
+}
+
+// Replaces any substitutions found in the final configuration.
+func (this *Bundle) applySubstitutions(config interface{}) {
+    // ...
 }
 
 // Reads the configuration for the given context into the given configuration interface.

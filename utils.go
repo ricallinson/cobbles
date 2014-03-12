@@ -20,3 +20,14 @@ func fromYaml(yaml []byte, i interface{}) {
 		panic(err)
 	}
 }
+
+// As it says.
+func reverseStringSlice(in []string) []string {
+    size := len(in)
+    out := make([]string, size)
+    size--
+    for i, v := range in {
+        out[size - i] = v
+    }
+    return out
+}
