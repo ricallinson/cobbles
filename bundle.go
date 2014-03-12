@@ -78,6 +78,11 @@ func (this *Bundle) getLookupPaths(context string) []string {
     return []string{}
 }
 
+// Replaces any substitutions found in the final configuration.
+func (this *Bundle) applySubstitutions(config interface{}) {
+    // ...
+}
+
 // Takes the unmarshalled YAML "dimensions" slice and returns it as a flattened map.
 func (this *Bundle) flattenDimensions(dimensions []map[string]interface{}) map[string]string {
 
@@ -127,6 +132,7 @@ func (this *Bundle) Read(context string, config interface{}) {
             fromYaml(yaml, config)
         }
     }
+    this.applySubstitutions(config)
 }
 
 // Returns the bundle as a YAML byte slice.
