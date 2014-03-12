@@ -16,7 +16,17 @@ type SimpleConfig struct {
 
 func TestBundle(t *testing.T) {
 
-	Describe("flattenDimensions", func() {
+	Describe("Bundle.stringToContext()", func() {
+		It("should return a map", func() {
+			b := &Bundle{}
+			c := b.stringToContext("lang=fr_CA,region=ir,environment=staging")
+			AssertEqual(c["lang"], "fr_CA")
+			AssertEqual(c["region"], "ir")
+			AssertEqual(c["environment"], "staging")
+		})
+	})
+
+	Describe("Bundle.flattenDimensions()", func() {
 		It("should return a flattened dimensions map", func() {
 			b := New("./fixtures")
 			index, dims := b.flattenDimensions(b.dimensions)
@@ -33,10 +43,10 @@ func TestBundle(t *testing.T) {
 		})
 	})
 
-	Describe("makeOrderedLookupList", func() {
+	Describe("Bundle.makeOrderedLookupList()", func() {
 		It("should return an ordered lookup list", func() {
 			b := New("./fixtures")
-			list := b.makeOrderedLookupList("lang=fr_CA,region=ir,environment=staging")
+			list := b.makeOrderedLookupList(map[string]string{"lang": "fr_CA", "region": "ir", "environment": "staging"})
 			// fmt.Printf("%s", toYaml(list))
 			AssertEqual(list["environment"][0], "staging")
 			AssertEqual(list["environment"][1], "*")
@@ -52,11 +62,12 @@ func TestBundle(t *testing.T) {
 		})
 	})
 
-	Describe("makeLookupPath", func() {
-		It("should return a", func() {
-			b := &Bundle{}
-			p := b.makeLookupPath("lang=fr_CA,region=ir,environment=staging")
-			AssertEqual(p, "xxx")
+	Describe("Bundle.makeLookupPath()", func() {
+		It("should return the lookup path for the given context", func() {
+			b := New("./fixtures")
+			p := b.makeLookupPath(map[string]string{"lang": "fr_CA", "region": "ir", "environment": "staging"})
+			AssertEqual(p, "staging/fr_CA/ir/*")
+			// fmt.Printf("%s\n", b.Debug())
 		})
 	})
 

@@ -4,9 +4,7 @@ import (
 	"io/ioutil"
 	"path"
 	// "fmt"
-	// "sort"
 	"strings"
-    // "reflect"
 )
 
 const(
@@ -54,6 +52,19 @@ func New(dirpath string) *Bundle {
 	return this
 }
 
+// String to context map.
+func (this *Bundle) stringToContext(contextString string) map[string]string {
+    context := map[string]string{}
+    parts := strings.Split(contextString, CONTEXT_SEPARATOR)
+    for _, part := range parts {
+        bits := strings.Split(part, CONTEXT_SETTER)
+        if len(bits) == 2 {
+            context[bits[0]] = bits[1]
+        }
+    }
+    return context
+}
+
 // Loads a dimensions YAML file into the Bundle.
 func (this *Bundle) loadDimensionsFile(filepath string) {
     if this.dimensions != nil {
@@ -75,7 +86,8 @@ func (this *Bundle) loadSettingsFile(filepath string) {
 		panic(err)
 	}
 	name := path.Base(filepath)
-	key := this.makeLookupPath(name[:strings.Index(name, ".")])
+    context := this.stringToContext(name[:strings.Index(name, ".")])
+	key := this.makeLookupPath(context)
 	if _, ok := this.settings[key]; ok {
 		panic("A Settings group with the key [" + key + "] has already loaded.")
 	}
@@ -126,28 +138,49 @@ func (this *Bundle) flattenDimension(prefix string, dimension map[interface{}]in
 }
 
 // Takes the given context string and returns it as an ordered lookup path.
-func (this *Bundle) makeLookupPath(context string) string {
-	return context
+func (this *Bundle) makeLookupPath(context map[string]string) string {
+
+    lookup := map[string]string{}
+    path := []string{}
+    lookupList := this.makeOrderedLookupList(context)
+
+    for dimensionName, _ := range this.dimensionIndex {
+        if match, ok := context[dimensionName]; ok {
+            for _, lookupName := range lookupList[dimensionName] {
+                if match == lookupName {
+                    lookup[dimensionName] = lookupName
+                }
+            }
+        }
+        if _, ok := lookup[dimensionName]; ok == false {
+            lookup[dimensionName] = DEFAULT
+        }
+    }
+
+    for _, item := range lookup {
+        path = append(path, item)
+    }
+
+	return strings.Join(path, SEPARATOR)
 }
 
 // Returns a slice of ordered lookup strings for the given context.
-func (this *Bundle) getLookupPaths(context string) []string {
+func (this *Bundle) getLookupPaths(context map[string]string) []string {
     this.makeOrderedLookupList(context)
     return []string{}
 }
 
 // Returns a slice of ordered lookup strings for the bundles dimensions.
-func (this *Bundle) makeOrderedLookupList(context string) map[string][]string {
+func (this *Bundle) makeOrderedLookupList(context map[string]string) map[string][]string {
 
     list := map[string][]string{}
 
     for _, set := range this.dimensions {
         for dimensionName, _ := range set {
             // For each dimension value see if have a match.
-            for lookupPath, value := range this.dimensionPaths[dimensionName] {
-                match := dimensionName + CONTEXT_SETTER + value
+            for lookupPath, match := range this.dimensionPaths[dimensionName] {
                 // If there is a match add it to the list.
-                if strings.Index(context, match) > -1 {
+                if _, ok := context[dimensionName]; ok && match == context[dimensionName] {
                     // Reverse the path.
                     slice := strings.Split(DEFAULT + SEPARATOR + lookupPath, SEPARATOR)
                     // sort.Sort(sort.Reverse(sort.StringSlice(slice)))
@@ -170,7 +203,7 @@ func (this *Bundle) applySubstitutions(config interface{}) {
 }
 
 // Reads the configuration for the given context into the given configuration interface.
-func (this *Bundle) Read(context string, config interface{}) {
+func (this *Bundle) Read(context map[string]string, config interface{}) {
     lookupPaths := this.getLookupPaths(context)
     for _, path := range lookupPaths {
         if yaml, ok := this.settings[path]; ok {
