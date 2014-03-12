@@ -56,7 +56,7 @@ func TestBundle(t *testing.T) {
 		It("should return a", func() {
 			b := &Bundle{}
 			p := b.makeLookupPath("lang=fr_CA,region=ir,environment=staging")
-			AssertEqual(p, "fr_CA")
+			AssertEqual(p, "xxx")
 		})
 	})
 
