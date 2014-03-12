@@ -21,10 +21,6 @@ type Bundle struct {
     dimensionPaths map[string]map[string]string
 }
 
-type Context struct {
-	Settings map[string]string
-}
-
 // Loads the given directory and returns a new Bundle.
 func New(dirpath string) *Bundle {
 
@@ -137,39 +133,6 @@ func (this *Bundle) flattenDimension(prefix string, dimension map[interface{}]in
     return build
 }
 
-// Takes the given context string and returns it as an ordered lookup path.
-func (this *Bundle) makeLookupPath(context map[string]string) string {
-
-    lookup := map[string]string{}
-    path := []string{}
-    lookupList := this.makeOrderedLookupList(context)
-
-    for dimensionName, _ := range this.dimensionIndex {
-        if match, ok := context[dimensionName]; ok {
-            for _, lookupName := range lookupList[dimensionName] {
-                if match == lookupName {
-                    lookup[dimensionName] = lookupName
-                }
-            }
-        }
-        if _, ok := lookup[dimensionName]; ok == false {
-            lookup[dimensionName] = DEFAULT
-        }
-    }
-
-    for _, item := range lookup {
-        path = append(path, item)
-    }
-
-	return strings.Join(path, SEPARATOR)
-}
-
-// Returns a slice of ordered lookup strings for the given context.
-func (this *Bundle) getLookupPaths(context map[string]string) []string {
-    this.makeOrderedLookupList(context)
-    return []string{}
-}
-
 // Returns a slice of ordered lookup strings for the bundles dimensions.
 func (this *Bundle) makeOrderedLookupList(context map[string]string) map[string][]string {
 
@@ -195,6 +158,39 @@ func (this *Bundle) makeOrderedLookupList(context map[string]string) map[string]
     }
 
     return list
+}
+
+// Returns a slice of ordered lookup strings for the given context.
+func (this *Bundle) getLookupPaths(context map[string]string) []string {
+    this.makeOrderedLookupList(context)
+    return []string{}
+}
+
+// Takes the given context and returns its lookup path.
+func (this *Bundle) makeLookupPath(context map[string]string) string {
+
+    lookup := map[string]string{}
+    path := []string{}
+    lookupList := this.makeOrderedLookupList(context)
+
+    for dimensionName, _ := range this.dimensionIndex {
+        if match, ok := context[dimensionName]; ok {
+            for _, lookupName := range lookupList[dimensionName] {
+                if match == lookupName {
+                    lookup[dimensionName] = lookupName
+                }
+            }
+        }
+        if _, ok := lookup[dimensionName]; ok == false {
+            lookup[dimensionName] = DEFAULT
+        }
+    }
+
+    for _, item := range lookup {
+        path = append(path, item)
+    }
+
+	return strings.Join(path, SEPARATOR)
 }
 
 // Replaces any substitutions found in the final configuration.
