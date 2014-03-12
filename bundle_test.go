@@ -1,7 +1,7 @@
 package cobbles
 
 import (
-	"fmt"
+	// "fmt"
 	. "github.com/ricallinson/simplebdd"
 	"testing"
 )
@@ -14,13 +14,17 @@ type SimpleConfig struct {
 	Links     map[string]string
 }
 
-func TestRouter(t *testing.T) {
+func TestBundle(t *testing.T) {
 
-	Describe("", func() {
-		It("", func() {
+	Describe("flattenDimensions", func() {
+		It("should return a flattened dimensions map", func() {
 			b := New("./fixtures")
-			fmt.Printf("%v", string(b.Debug()))
-			AssertEqual(true, false)
+			dims := b.flattenDimensions(b.dimensions)
+			// fmt.Printf("%s", toYaml(dims))
+			AssertEqual("en", dims["lang/en"])
+			AssertEqual("en_CA", dims["lang/en/en_CA"])
+			AssertEqual("fr", dims["lang/fr"])
+			AssertEqual("fr_CA", dims["lang/fr/fr_FR/fr_CA"])
 		})
 	})
 
