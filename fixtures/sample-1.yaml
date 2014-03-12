@@ -1,8 +1,0 @@
-- settings: 
-    master:
-  title_key: TITLE_COBBLES
-  data_url: http://service.cobbles.com
-  logo1: cobbles.png
-  links:
-    home: http://www.cobbles.com
-    mail: http://mail.cobbles.com

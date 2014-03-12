@@ -3,12 +3,14 @@ package cobbles
 import (
 	"io/ioutil"
 	"path"
+    // "fmt"
+    "strings"
+    "sort"
 )
 
 type Bundle struct {
 	dimensions []interface{}
-	settings   []interface{}
-    lookup     map[string]int
+	settings   map[string][]byte
 }
 
 type Context struct {
@@ -19,7 +21,7 @@ type Context struct {
 func New(dirpath string) *Bundle {
 
 	this := &Bundle{
-        lookup: map[string]int{},
+        settings: map[string][]byte{},
     }
 
 	files, err := ioutil.ReadDir(dirpath)
@@ -55,34 +57,29 @@ func (this *Bundle) loadDimensionsFile(filepath string) {
 
 // Loads a settings YAML file.
 func (this *Bundle) loadSettingsFile(filepath string) {
-	b, err := ioutil.ReadFile(filepath)
+	settings, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		panic(err)
 	}
-
-	settings := []interface{}{}
-	fromYaml(b, &settings)
-
-    // For each settings group found in the file.
-    for i := range settings {
-        setting := settings[i]
-        context := &Context{}
-        Cast(settings, context)
-        key := this.makeLookupPath()
-        if _, ok := this.lookup[key]; ok {
-            // panic("Settings group " + key + " has already loaded.")
-        }
-        this.settings = append(this.settings, setting)
-        this.lookup[key] = len(this.settings)
+    name := path.Base(filepath)
+    key := this.makeLookupPath(name[:strings.Index(name, ".")])
+    if _, ok := this.settings[key]; ok {
+        panic("Settings group " + key + " has already loaded.")
     }
+    this.settings[key] = settings
 }
 
 func (this *Bundle) flattenDimensions() {
 
 }
 
-func (this *Bundle) makeLookupPath() string {
-    return ""
+func (this *Bundle) makeLookupPath(context string) string {
+    if context == "master" {
+        return "master"
+    }
+    parts := strings.Split(context, ",")
+    sort.Strings(parts)
+    return strings.Join(parts, ",")
 }
 
 // Reads the configuration for the given context into the given configuration interface.
@@ -94,7 +91,13 @@ func (this *Bundle) Read(context string, config interface{}) {
 func (this *Bundle) Debug() []byte {
 	type dump struct {
 		Dimensions []interface{}
-		Settings   []interface{}
+		Settings   map[string]interface{}
 	}
-	return toYaml(dump{this.dimensions, this.settings})
+    d := dump{this.dimensions, map[string]interface{}{}}
+    for k, v := range this.settings {
+        var i interface{}
+        fromYaml(v, &i)
+        d.Settings[k] = i
+    }
+	return toYaml(d)
 }
