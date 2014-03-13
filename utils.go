@@ -23,11 +23,11 @@ func fromYaml(b []byte, i interface{}) {
 
 // As it says.
 func reverseStringSlice(in []string) []string {
-    size := len(in)
-    out := make([]string, size)
-    size--
-    for i, v := range in {
-        out[size - i] = v
-    }
-    return out
+	size := len(in)
+	out := make([]string, size)
+	size--
+	for i, v := range in {
+		out[size-i] = v
+	}
+	return out
 }
