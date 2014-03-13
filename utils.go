@@ -1,12 +1,12 @@
 package cobbles
 
 import (
-	"launchpad.net/goyaml"
+	"github.com/go-yaml/yaml"
 )
 
 // Return the given interface as a YAML byte slice.
 func toYaml(i interface{}) []byte {
-	data, err := goyaml.Marshal(i)
+	data, err := yaml.Marshal(i)
 	if err != nil {
 		panic(err)
 	}
@@ -14,8 +14,8 @@ func toYaml(i interface{}) []byte {
 }
 
 // Reads the given YAML byte slice into the given interface.
-func fromYaml(yaml []byte, i interface{}) {
-	err := goyaml.Unmarshal(yaml, i)
+func fromYaml(b []byte, i interface{}) {
+	err := yaml.Unmarshal(b, i)
 	if err != nil {
 		panic(err)
 	}
