@@ -1,5 +1,6 @@
-cobbles
-=======
+# cobbles
+
+[![Build Status](https://secure.travis-ci.org/ricallinson/cobbles.png?branch=master)](http://travis-ci.org/ricallinson/cobbles)
 
 Multidimensional Configuration for Golang
 

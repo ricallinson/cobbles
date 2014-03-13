@@ -1,7 +1,7 @@
 language: go
 go:
-    - 1.2
-    - tip
+    - 1.1.2
+    - 1.2.1
 install:
     - go get launchpad.net/goyaml
     - go get github.com/ricallinson/simplebdd
