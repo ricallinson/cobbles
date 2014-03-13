@@ -71,5 +71,18 @@ func TestBundle(t *testing.T) {
 		})
 	})
 
+	Describe("Bundle.makeLookupPaths()", func() {
+		It("should return an ordered lookup list of paths for the given context", func() {
+			b := New("./fixtures")
+			p := b.makeLookupPaths(map[string]string{"lang": "fr_CA", "region": "ir", "environment": "staging"})
+			// fmt.Printf("%s\n", toYaml(p))
+			AssertEqual(p[0], "*/*/*/*")
+			AssertEqual(p[8], "*/fr_FR/*/*")
+			AssertEqual(p[16], "staging/*/*/*")
+			AssertEqual(p[24], "staging/fr_FR/*/*")
+			AssertEqual(p[31], "staging/fr_CA/ir/*")
+		})
+	})
+
 	Report(t)
 }

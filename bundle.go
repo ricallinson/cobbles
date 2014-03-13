@@ -21,6 +21,12 @@ type Bundle struct {
     dimensionPaths map[string]map[string]string
 }
 
+// Used in the tumble function.
+type combi struct {
+    current int
+    total int
+}
+
 // Loads the given directory and returns a new Bundle.
 func New(dirpath string) *Bundle {
 
@@ -160,9 +166,49 @@ func (this *Bundle) makeOrderedLookupList(context map[string]string) map[string]
     return list
 }
 
-// Returns a slice of ordered lookup strings for the given context.
-func (this *Bundle) getLookupPaths(context map[string]string) []string {
-    this.makeOrderedLookupList(context)
+// Tumbles over a slice of combi objects.
+func (this *Bundle) tumble(combination []combi, pos int) bool {
+    // If the position is not found return.
+    if pos < 0 {
+        return false
+    }
+    // Move along to the next item.
+    combination[pos].current += 1
+    // If the next item is not found move to the prev position.
+    if (combination[pos].current > combination[pos].total) {
+        combination[pos].current = 0
+        return this.tumble(combination, pos - 1)
+    }
+    return true;
+}
+
+// Returns an ordered slice of lookup paths for the given context.
+func (this *Bundle) makeLookupPaths(context map[string]string) []string {
+
+    paths := []string{}
+    values := this.makeOrderedLookupList(context)
+    combination := make([]combi, len(this.dimensionIndex))
+    startPos := len(combination) - 1
+
+    for dimensionName, pos := range this.dimensionIndex {
+        combination[pos] = combi{
+            current: 0,
+            total: len(values[dimensionName]) - 1,
+        }
+    }
+
+    for {
+        path := []string{}
+        for dimensionName, pos := range this.dimensionIndex {
+            path = append(path, values[dimensionName][combination[pos].current])
+        }
+        paths = append(paths, strings.Join(path, SEPARATOR))
+        if this.tumble(combination, startPos) == false {
+            return reverseStringSlice(paths)
+        }
+    }
+
+    // If got here something went very wrong.
     return []string{}
 }
 
@@ -200,7 +246,7 @@ func (this *Bundle) applySubstitutions(config interface{}) {
 
 // Reads the configuration for the given context into the given configuration interface.
 func (this *Bundle) Read(context map[string]string, config interface{}) {
-    lookupPaths := this.getLookupPaths(context)
+    lookupPaths := this.makeLookupPaths(context)
     for _, path := range lookupPaths {
         if yaml, ok := this.settings[path]; ok {
             fromYaml(yaml, config)
