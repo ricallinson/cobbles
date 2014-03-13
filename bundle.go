@@ -245,7 +245,11 @@ func (this *Bundle) applySubstitutions(config interface{}) {
 }
 
 // Reads the configuration for the given context into the given configuration interface.
-func (this *Bundle) Read(context map[string]string, config interface{}) {
+func (this *Bundle) Read(config interface{}, c... string) {
+    context := map[string]string{}
+    if len(c) == 1 {
+        context = this.stringToContext(c[0])
+    }
     lookupPaths := this.makeLookupPaths(context)
     for _, path := range lookupPaths {
         if yaml, ok := this.settings[path]; ok {

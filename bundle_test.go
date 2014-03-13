@@ -1,13 +1,12 @@
 package cobbles
 
 import (
-	// "fmt"
+	"fmt"
 	. "github.com/ricallinson/simplebdd"
 	"testing"
 )
 
 type SimpleConfig struct {
-	Settings  map[string]string
 	Title_key string
 	Data_url  string
 	Logo      string
@@ -81,6 +80,33 @@ func TestBundle(t *testing.T) {
 			AssertEqual(p[16], "staging/*/*/*")
 			AssertEqual(p[24], "staging/fr_FR/*/*")
 			AssertEqual(p[31], "staging/fr_CA/ir/*")
+		})
+	})
+
+	Describe("Bundle.Read()", func() {
+		It("should return SimpleConfig for master", func() {
+			var c SimpleConfig
+			b := New("./fixtures")
+			b.Read(&c)
+			// fmt.Printf("%s\n", toYaml(c))
+			AssertEqual(c.Data_url, "http://service.cobbles.com")
+			AssertEqual(c.Logo, "cobbles.png")
+		})
+		It("should return SimpleConfig for lang=fr_CA,region=ir,environment=staging", func() {
+			var c SimpleConfig
+			b := New("./fixtures")
+			b.Read(&c, "lang=fr_CA,region=ir,environment=staging")
+			// fmt.Printf("%s\n", toYaml(c))
+			AssertEqual(c.Data_url, "http://eu.service.cobbles.com")
+			AssertEqual(c.Logo, "cobbles_fr.png")
+		})
+		It("should return SimpleConfig for lang=fr_CA,region=ca,environment=staging", func() {
+			var c SimpleConfig
+			b := New("./fixtures")
+			b.Read(&c, "lang=fr_CA,region=ca,environment=staging")
+			fmt.Printf("%s\n", toYaml(c))
+			AssertEqual(c.Data_url, "http://service.cobbles.com")
+			AssertEqual(c.Logo, "cobbles_fr_CA.png")
 		})
 	})
 
